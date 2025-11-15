@@ -37,8 +37,13 @@ else:
         </style>
     """, unsafe_allow_html=True)
 
-BACKEND_LOGIN_URL = "http://127.0.0.1:8000/login"
-BACKEND_SIGNUP_URL = "http://127.0.0.1:8000/signup"
+# ====== EDIT THIS FOR CLOUD DEPLOY ======
+# Example (Change to your deployed backend for Streamlit Cloud!):
+# BACKEND_API = "https://your-backend-service.onrender.com"
+# For local dev:
+BACKEND_API = "http://127.0.0.1:8000"
+BACKEND_LOGIN_URL = f"{BACKEND_API}/login"
+BACKEND_SIGNUP_URL = f"{BACKEND_API}/signup"
 
 PAGES = [
     "Home",

@@ -299,15 +299,15 @@ def custom_ai_explanation(vt_summary, gsb_result, phish_result):
     ]):
         lines.append("""
 **Final verdict:**
-- <span style='color:#fc5c65;font-weight:600;'>HARMFUL!</span>  
+- <span style='color:#fc5c65;font-weight:600;'>HARMFUL!</span>  
 - <b>Do NOT open this link. It is dangerous.</b>
 """)
     elif (
         vt_summary.get("suspicious", 0) > 0 if "error" not in vt_summary else False
     ):
         lines.append("""
-**Final verdict:**  
-- <span style='color:#ffe066;font-weight:600;'>RISKY.</span>  
+**Final verdict:**  
+- <span style='color:#ffe066;font-weight:600;'>RISKY.</span>  
 - Caution advised. This link is suspicious.
 """)
     elif all([
@@ -316,14 +316,14 @@ def custom_ai_explanation(vt_summary, gsb_result, phish_result):
         phish_result.get("error") if phish_result else True,
     ]):
         lines.append("""
-**Final verdict:**  
+**Final verdict:**  
 - <span style='color:#ffe066;font-weight:600;'>UNKNOWN — all engines failed.</span>
 - Unable to verify safety. Try again later.
 """)
     else:
         lines.append("""
-**Final verdict:**  
-- <span style='color:#44e3a6;font-weight:600;'>This link appears safe.</span>  
+**Final verdict:**  
+- <span style='color:#44e3a6;font-weight:600;'>This link appears safe.</span>  
 - No dangerous content detected by available security engines.
 """)
     return "\n".join(lines)
@@ -495,8 +495,16 @@ class TextInput(BaseModel):
 
 @app.post("/scan_text")
 def scan_text(data: TextInput, user: str = Depends(verify_token)):
-    # Placeholder demo logic: always return "safe"
-    # Upgrade this to a real AI scan later
+    suspicious_keywords = [
+        "urgent", "immediately", "click here", "verify your account", "reset your password",
+        "limited time", "risk", "account suspended", "login details", "bank account", "verify",
+        "reward", "prize", "selected", "claim", "security alert", "payment", "update your info",
+        "expire", "sensitive", "confirm", "free gift", "action required", "respond within"
+    ]
+    score = 1
+    label = "safe"
+    explanation = "No threats detected in your message. It appears safe."
+    txt_lc = data.text.lower()
     if not data.text or len(data.text) < 20:
         return {
             "ai_explanation": "Please enter at least 20 characters of text to analyze.",
@@ -504,9 +512,25 @@ def scan_text(data: TextInput, user: str = Depends(verify_token)):
             "threat_label": "unknown",
             "input_preview": data.text
         }
+    keyword_hits = [kw for kw in suspicious_keywords if kw in txt_lc]
+    if len(keyword_hits) >= 2:
+        score = 5
+        label = "suspicious"
+        explanation = (
+            "**Suspicious pattern detected!**\n"
+            f"Keywords found: {', '.join(keyword_hits)}\n"
+            "- This message contains vocabulary and urgency/tactics like scam, phishing, or social engineering."
+        )
+    elif any(kw in txt_lc for kw in suspicious_keywords):
+        score = 3
+        label = "risky"
+        explanation = (
+            "**Potentially risky content found!**\n"
+            "At least one suspicious keyword or urgency tactic is present. Be cautious."
+        )
     return {
-        "ai_explanation": "No threats detected in your message. It appears safe.",
-        "threat_score": 1,
-        "threat_label": "safe",
+        "ai_explanation": explanation,
+        "threat_score": score,
+        "threat_label": label,
         "input_preview": data.text[:1500]
     }
