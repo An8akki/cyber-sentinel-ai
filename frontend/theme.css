@@ -1,0 +1,159 @@
+/* Core background and text */
+.stApp {
+    background: #181920 !important;
+    color: #f0f6fc !important;
+    min-height: 100vh;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+
+/* Main dashboard title */
+.main-title {
+    font-size: 3em;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 0.7em;
+    margin-bottom: 0.4em;
+    background: linear-gradient(90deg, #26c6da 0%, #283e51 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Section titles and accent lines */
+.section-title {
+    font-size: 1.3em;
+    font-weight: 680;
+    color: #4affef;
+    margin-top: 1.4em;
+    margin-bottom: 1.08em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Streamlit button styling */
+.stButton>button {
+    font-size: 1.1em;
+    border-radius: 25px;
+    background: linear-gradient(90deg, #26c6da 0%, #283e51 100%);
+    color: #fff !important;
+    font-weight: 700;
+    padding: 0.45em 2.3em;
+    margin: 1em auto 2em auto;
+    display: block;
+    box-shadow: 0px 3px 16px 0px rgba(40,62,81,0.18);
+    border: none;
+    transition: all 0.19s;
+}
+
+.stButton>button:hover {
+    filter: brightness(1.12) drop-shadow(0px 2px 12px #26c6da44);
+    background: linear-gradient(90deg, #1fffc7 0%, #365b7c 100%);
+    color: #101010 !important;
+}
+
+/* Card and box backgrounds */
+.result-card {
+    background: rgba(39,51,89,0.97);
+    border-radius: 15px;
+    box-shadow: 0 6px 28px 0 rgba(0,0,0,0.17);
+    padding: 1.55em 1.25em 1.25em 1.25em;
+    margin-bottom: 2.4em;
+    margin-top: 0.7em;
+    color: #f0f6fc !important;
+    border-left: 6px solid #4affef;
+}
+
+.success-box {
+    background: rgba(56,181,112,0.14);
+    color: #b2ffc7;
+    border-radius: 8px;
+    padding: 0.7em 1.1em;
+    margin-bottom: 1.2em;
+    font-weight: 650;
+    font-size: 1.09em;
+}
+
+.error-box {
+    background: rgba(255,73,80,0.16);
+    color: #ff6961;
+    border-radius: 8px;
+    padding: 0.7em 1.1em;
+    margin-bottom: 1.2em;
+    font-weight: 650;
+    font-size: 1.09em;
+}
+
+/* Footer */
+.footer-note {
+    text-align:right;
+    font-size:0.97em;
+    color: #aeb8c2;
+    margin-top: 3.2em;
+}
+
+/* Sidebar customization */
+[data-testid="stSidebar"] {
+    background: #15161e !important;
+    color: #eef6fc !important;
+}
+[data-testid="stSidebar"] .css-1v0mbdj {
+    color: #4affef !important;
+}
+
+/* Nav radio buttons on sidebar */
+.sidebar .streamlit-expanderHeader {
+    font-size: 1.13em;
+    letter-spacing: 1.4px;
+    color: #44e3a6 !important;
+    font-weight: bold;
+}
+
+/* Tweaks for Streamlit modals and file upload */
+[data-testid="stFileUploader"] {
+    background: #232739 !important;
+    padding: 0.7em 0.8em 1.2em 0.8em !important;
+    border-radius: 17px;
+    color: #ddeafc;
+}
+[data-testid="stFileUploader"] label {
+    color: #4affef;
+}
+
+/* Custom scroll bar for dashboard content (for dark theme) */
+::-webkit-scrollbar {
+  width: 0.55em;
+  background: #222536;
+}
+::-webkit-scrollbar-thumb {
+  background: #283e51;
+  border-radius: 12px;
+}
+
+/* Table and plots */
+.stDataFrame, .stTable {
+    border-radius: 13px;
+    box-shadow: 0px 4px 25px 0px rgba(40,62,81,0.14);
+    background: #202232 !important;
+    overflow: hidden !important;
+}
+
+/* Code block background */
+.stCodeBlock {
+    background: #222739 !important;
+    color: #e6eefd !important;
+}
+
+/* Alert and info styling */
+div[data-testid="stAlertInfo"] {
+    background: rgba(68,227,166,0.09) !important;
+    color: #44e3a6 !important;
+}
+
+div[data-testid="stAlertWarning"] {
+    background: rgba(255,224,102,0.11) !important;
+    color: #ffe066 !important;
+}
+
+div[data-testid="stAlertError"] {
+    background: rgba(253,92,101,0.09) !important;
+    color: #fc5c65 !important;
+}
