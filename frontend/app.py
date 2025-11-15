@@ -37,10 +37,9 @@ else:
         </style>
     """, unsafe_allow_html=True)
 
-# ====== EDIT THIS FOR CLOUD DEPLOY ======
-# Example (Change to your deployed backend for Streamlit Cloud!):
+# ====== SET YOUR BACKEND URL HERE FOR DEPLOY ======
+# When using Streamlit Cloud, set to your deployed backend service location, e.g.:
 # BACKEND_API = "https://your-backend-service.onrender.com"
-# For local dev:
 BACKEND_API = "http://127.0.0.1:8000"
 BACKEND_LOGIN_URL = f"{BACKEND_API}/login"
 BACKEND_SIGNUP_URL = f"{BACKEND_API}/signup"
@@ -109,7 +108,7 @@ if not st.session_state["token"]:
                     st.error(f"Error: {e}")
             if cols[1].button("Sign Up"):
                 st.session_state.show_signup = True
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.markdown("### Sign Up")
             signup_user = st.text_input("New username", key="signup_user_ctr")
@@ -136,14 +135,14 @@ if not st.session_state["token"]:
                             st.success("Signup successful! You can now log in.")
                             st.session_state.show_signup = False
                             time.sleep(1)
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error(data.get("message", "Signup failed."))
                     except Exception as e:
                         st.error(f"Error: {e}")
             if row_signup[1].button("Back to Login"):
                 st.session_state.show_signup = False
-                st.experimental_rerun()
+                st.rerun()
     st.stop()
 
 # ==== AFTER LOGIN: NAVBAR ====
@@ -186,7 +185,7 @@ with nav:
                 unsafe_allow_html=True)
     if nav_cols[-2].button("Logout", key="mainnav_logout"):
         reset_auth_state()
-        st.experimental_rerun()
+        st.rerun()
     nav_cols[-1].markdown(f'<div style="margin-top:0.6em;color:#aaa;font-weight:600;">{st.session_state.get("username","")}</div>', unsafe_allow_html=True)
 
 # Draw page content
