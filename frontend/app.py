@@ -40,7 +40,7 @@ else:
 # ====== SET YOUR BACKEND URL HERE FOR DEPLOY ======
 # When using Streamlit Cloud or Render, set this to the deployed backend service, e.g.:
 # BACKEND_API = "https://your-backend-service.onrender.com"
-BACKEND_API = "https://your-backend-service.onrender.com"
+BACKEND_API = "https://cyber-sentinel-backend-q5j6.onrender.com"
 
 st.title("🛡️ Cyber Sentinel AI")
 st.write("Securing Tomorrow, Today")
