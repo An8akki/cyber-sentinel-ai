@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt
 from dotenv import load_dotenv
-from pyzbar.pyzbar import decode
 from PIL import Image
 import requests
 
@@ -19,25 +18,16 @@ VT_API_KEY = os.getenv("VT_API_KEY")
 GOOGLE_SAFEBROWSING_API_KEY = os.getenv("GOOGLE_SAFEBROWSING_API_KEY")
 PHISHTANK_API_KEY = os.getenv("PHISHTANK_API_KEY")
 
-# PASSWORD + JWT AUTH
+# AUTH (but no login/signup!)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "your-strong-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-def hash_password(password):
-    if len(password) > 72:
-        raise ValueError("Password too long for bcrypt (max 72 characters)")
-    return pwd_context.hash(password)
-
-def verify_password(plain, hashed):
-    return pwd_context.verify(plain, hashed)
-
 def create_token(username):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     data = {"sub": username, "exp": expire}
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
-
 def verify_token(token: str = Header(None)):
     if token is None:
         raise HTTPException(status_code=401, detail="Auth token missing")
@@ -47,13 +37,10 @@ def verify_token(token: str = Header(None)):
     except:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-# FASTAPI APP
 app = FastAPI()
 
-# === HISTORY, SIGNUP, LOGIN === #
 def save_history(entry):
     pass
-
 def get_history():
     return []
 
@@ -61,24 +48,7 @@ def get_history():
 def history(user: str = Depends(verify_token)):
     return JSONResponse(get_history())
 
-class SignUp(BaseModel):
-    username: str
-    email: str
-    password: str
-
-@app.post("/signup")
-def signup(user: SignUp):
-    return {"status": "error", "message": "Signup disabled for web/demo deploy"}
-
-class Login(BaseModel):
-    username: str
-    password: str
-
-@app.post("/login")
-def login(data: Login):
-    return {"error": "Login disabled for web/demo deploy"}
-
-# ==== URL SCAN ENDPOINT ==== #
+# ==== URL SCAN ENDPOINT ====
 class URLInput(BaseModel):
     url: str
 
@@ -96,11 +66,7 @@ def validate_url(url):
 def scan_url_vt(url):
     try:
         submit_url = "https://www.virustotal.com/api/v3/urls"
-        res = requests.post(
-            submit_url,
-            headers={"x-apikey": VT_API_KEY},
-            data={"url": url}
-        )
+        res = requests.post(submit_url, headers={"x-apikey": VT_API_KEY}, data={"url": url})
         data = res.json()
         if "data" not in data:
             return {"error": "VirusTotal refused the URL", "raw": data}
@@ -310,61 +276,6 @@ def scan_url_api(data: URLInput, user: str = Depends(verify_token)):
         "raw_vt": vt_raw
     }
 
-def decode_qr_image(image_path):
-    try:
-        img = Image.open(image_path)
-        results = decode(img)
-        for result in results:
-            url = result.data.decode("utf-8")
-            if url.startswith(("http://", "https://")):
-                return url
-        return None
-    except Exception as e:
-        return None
-
-@app.post("/scan_qr")
-async def scan_qr(file: UploadFile = File(...), user: str = Depends(verify_token)):
-    file_location = f"temp_{file.filename}"
-    with open(file_location, "wb") as f:
-        f.write(await file.read())
-    decoded_url = decode_qr_image(file_location)
-    try: os.remove(file_location)
-    except: pass
-    if not decoded_url:
-        return {"error": "No QR code or URL found in the image"}
-    valid, reason = validate_url(decoded_url)
-    if not valid:
-        return {
-            "decoded_url": decoded_url,
-            "summary": {"error": reason},
-            "ai_explanation": f"⚠️ Cannot scan URL: {reason}",
-            "threat_score": 1,
-            "threat_label": "unknown"
-        }
-    vt_raw = scan_url_vt(decoded_url)
-    vt_summary = extract_vt_summary(vt_raw, decoded_url)
-    gsb = check_google_safe_browsing(decoded_url)
-    phish = check_phishtank(decoded_url)
-    explanation = custom_ai_explanation(vt_summary, gsb, phish)
-    score, label = calculate_full_threat_score(vt_summary, gsb, phish)
-    entry = {
-        "type": "qr",
-        "input": decoded_url,
-        "label": label,
-        "score": score
-    }
-    save_history(entry)
-    return {
-        "decoded_url": decoded_url,
-        "vt_summary": vt_summary,
-        "google_safebrowsing": gsb,
-        "phishtank": phish,
-        "ai_explanation": explanation,
-        "threat_score": score,
-        "threat_label": label,
-        "raw_vt": vt_raw
-    }
-
 def file_scan_ai_explanation(stats, file_name, raw):
     total_engines = sum(int(stats.get(k, 0)) for k in ("malicious", "suspicious", "undetected", "harmless", "timeout", "confirmed-timeout", "failure", "type-unsupported"))
     mal = stats.get("malicious", 0)
@@ -434,7 +345,7 @@ async def scan_file(file: UploadFile = File(...), user: str = Depends(verify_tok
     except Exception as e:
         return {"error": str(e)}
 
-# ==== TEXT ANALYZER (EMAIL SCANNER) ENDPOINT ==== #
+# ==== TEXT SCANNER ENDPOINT ==== #
 class TextInput(BaseModel):
     text: str
 
