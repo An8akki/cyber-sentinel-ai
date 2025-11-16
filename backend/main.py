@@ -11,20 +11,13 @@ from jose import jwt
 from dotenv import load_dotenv
 from pyzbar.pyzbar import decode
 from PIL import Image
-import oracledb
 import requests
 
-# ENVIRONMENT, API KEYS, DB CONNECTION
+# ENVIRONMENT, API KEYS
 load_dotenv()
 VT_API_KEY = os.getenv("VT_API_KEY")
 GOOGLE_SAFEBROWSING_API_KEY = os.getenv("GOOGLE_SAFEBROWSING_API_KEY")
 PHISHTANK_API_KEY = os.getenv("PHISHTANK_API_KEY")
-DB_USER = "scanapp"
-DB_PASS = "scan_password"
-DB_DSN = "localhost:1521/XEPDB1"
-
-def get_conn():
-    return oracledb.connect(user=DB_USER, password=DB_PASS, dsn=DB_DSN)
 
 # PASSWORD + JWT AUTH
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -36,12 +29,15 @@ def hash_password(password):
     if len(password) > 72:
         raise ValueError("Password too long for bcrypt (max 72 characters)")
     return pwd_context.hash(password)
+
 def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
+
 def create_token(username):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     data = {"sub": username, "exp": expire}
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+
 def verify_token(token: str = Header(None)):
     if token is None:
         raise HTTPException(status_code=401, detail="Auth token missing")
@@ -54,41 +50,12 @@ def verify_token(token: str = Header(None)):
 # FASTAPI APP
 app = FastAPI()
 
+# === HISTORY, SIGNUP, LOGIN === #
 def save_history(entry):
-    try:
-        conn = get_conn()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO SCAN_HISTORY (TYPE, INPUT, LABEL, SCORE) VALUES (:1, :2, :3, :4)",
-            (entry["type"], entry["input"], entry["label"], entry["score"])
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print("History DB save error:", e)
+    pass
 
 def get_history():
-    try:
-        conn = get_conn()
-        cur = conn.cursor()
-        cur.execute("SELECT TYPE, INPUT, LABEL, SCORE, SCAN_TIME FROM SCAN_HISTORY ORDER BY ID")
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        return [
-            {
-                "type": r[0],
-                "input": r[1],
-                "label": r[2],
-                "score": r[3],
-                "timestamp": r[4].strftime("%Y-%m-%d %H:%M:%S")
-            }
-            for r in rows
-        ]
-    except Exception as e:
-        print("History DB load error:", e)
-        return []
+    return []
 
 @app.get("/history")
 def history(user: str = Depends(verify_token)):
@@ -101,18 +68,7 @@ class SignUp(BaseModel):
 
 @app.post("/signup")
 def signup(user: SignUp):
-    conn = get_conn()
-    cur = conn.cursor()
-    hashed = hash_password(user.password)
-    try:
-        cur.execute("INSERT INTO users (username, email, password_hash) VALUES (:1, :2, :3)", (user.username, user.email, hashed))
-        conn.commit()
-        return {"status": "success", "message": "User created"}
-    except oracledb.IntegrityError:
-        return {"status": "error", "message": "Username or email already taken"}
-    finally:
-        cur.close()
-        conn.close()
+    return {"status": "error", "message": "Signup disabled for web/demo deploy"}
 
 class Login(BaseModel):
     username: str
@@ -120,20 +76,9 @@ class Login(BaseModel):
 
 @app.post("/login")
 def login(data: Login):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT password_hash FROM users WHERE username=:1", [data.username])
-    row = cur.fetchone()
-    cur.close(); conn.close()
-    if not row:
-        return {"error": "Invalid username or password"}
-    hashed = row[0]
-    if not verify_password(data.password, hashed):
-        return {"error": "Invalid username or password"}
-    token = create_token(data.username)
-    return {"message": "Login successful", "token": token}
+    return {"error": "Login disabled for web/demo deploy"}
 
-# ==== URL SCAN ENDPOINT ====
+# ==== URL SCAN ENDPOINT ==== #
 class URLInput(BaseModel):
     url: str
 
@@ -299,15 +244,15 @@ def custom_ai_explanation(vt_summary, gsb_result, phish_result):
     ]):
         lines.append("""
 **Final verdict:**
-- <span style='color:#fc5c65;font-weight:600;'>HARMFUL!</span>  
+- <span style='color:#fc5c65;font-weight:600;'>HARMFUL!</span>  
 - <b>Do NOT open this link. It is dangerous.</b>
 """)
     elif (
         vt_summary.get("suspicious", 0) > 0 if "error" not in vt_summary else False
     ):
         lines.append("""
-**Final verdict:**  
-- <span style='color:#ffe066;font-weight:600;'>RISKY.</span>  
+**Final verdict:**  
+- <span style='color:#ffe066;font-weight:600;'>RISKY.</span>  
 - Caution advised. This link is suspicious.
 """)
     elif all([
@@ -316,14 +261,14 @@ def custom_ai_explanation(vt_summary, gsb_result, phish_result):
         phish_result.get("error") if phish_result else True,
     ]):
         lines.append("""
-**Final verdict:**  
+**Final verdict:**  
 - <span style='color:#ffe066;font-weight:600;'>UNKNOWN — all engines failed.</span>
 - Unable to verify safety. Try again later.
 """)
     else:
         lines.append("""
-**Final verdict:**  
-- <span style='color:#44e3a6;font-weight:600;'>This link appears safe.</span>  
+**Final verdict:**  
+- <span style='color:#44e3a6;font-weight:600;'>This link appears safe.</span>  
 - No dangerous content detected by available security engines.
 """)
     return "\n".join(lines)
@@ -489,7 +434,7 @@ async def scan_file(file: UploadFile = File(...), user: str = Depends(verify_tok
     except Exception as e:
         return {"error": str(e)}
 
-# ==== TEXT ANALYZER (EMAIL SCANNER) ENDPOINT ====
+# ==== TEXT ANALYZER (EMAIL SCANNER) ENDPOINT ==== #
 class TextInput(BaseModel):
     text: str
 
